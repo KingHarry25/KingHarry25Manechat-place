@@ -231,7 +231,7 @@ const { html, render } = mlp_uhtml;
     position: absolute;
     top: 50%;
     left: 50%;
-    border: 2px solid red;
+    border: 5px solid red;
     transform: translateX(-50%) translateY(-50%);
   }
 
@@ -421,6 +421,11 @@ const { html, render } = mlp_uhtml;
   maskCanvas.width = rPlaceCanvas.width;
   maskCanvas.height = rPlaceCanvas.height;
   const maskCtx = maskCanvas.getContext("2d");
+
+  const checkCanvas = document.createElement("canvas");
+  checkCanvas.width = rPlaceCanvas.width;
+  checkCanvas.height = rPlaceCanvas.height;
+  const checkCtx = rPlaceCanvas.getContext("2d");
 
   imageBlock.onload = function () {
     canvas.width = this.naturalWidth;
@@ -680,7 +685,7 @@ const { html, render } = mlp_uhtml;
     return bucket[Math.floor(Math.random() * bucket.length)];
   }
 
-  const FOCUS_AREA_SIZE = 1000;
+  const FOCUS_AREA_SIZE = 75;
   /**
    * Select a random pixel weighted by the mask.
    *
@@ -774,7 +779,19 @@ const { html, render } = mlp_uhtml;
   }
 
   function autoColorPick(imageData) {
-    if (imageData.data[3] !== 255) return;
+    if (imageData.data[3] !== 255) {
+      let diff = [];
+      for (const color of palette) {
+        diff.push(Math.abs(255 - color[0]) + Math.abs(255 - color[1]) + Math.abs(255 - color[2]));
+      }
+      let correctColorID = 0;
+      for (let i = 0; i < diff.length; i++) {
+        if (diff[correctColorID] > diff[i]) correctColorID = i;
+      }
+
+      embed.selectedColor = palette[correctColorID][3];
+      return;
+    }
 
     const r = imageData.data[0];
     const g = imageData.data[1];
@@ -789,6 +806,46 @@ const { html, render } = mlp_uhtml;
     }
 
     embed.selectedColor = palette[correctColorID][3];
+  }
+
+  function checkIfColorRight(imageData, currentImageData) {
+    if (imageData.data[3] !== 255) return;
+
+    const correct_r = imageData.data[0];
+    const correct_g = imageData.data[1];
+    const correct_b = imageData.data[2];
+
+    let correct_diff = [];
+    for (const color of palette) {
+      correct_diff.push(Math.abs(correct_r - color[0]) + Math.abs(correct_g - color[1]) + Math.abs(correct_b - color[2]));
+    }
+    let correctColorID = 0;
+    for (let i = 0; i < correct_diff.length; i++) {
+      if (correct_diff[correctColorID] > correct_diff[i]) correctColorID = i;
+    }
+
+    console.log("Correct: \n    r: "+correct_r+"\n    g: "+correct_g+"\n    b: "+correct_b+"\n    ColorID: "+correctColorID);
+
+    const r = currentImageData.data[0];
+    const g = currentImageData.data[1];
+    const b = currentImageData.data[2];
+
+    let diff = [];
+    for (const color of palette) {
+      diff.push(Math.abs(r - color[0]) + Math.abs(g - color[1]) + Math.abs(b - color[2]));
+    }
+    let colorID = 0;
+    for (let i = 0; i < diff.length; i++) {
+      if (diff[colorID] > diff[i]) colorID = i;
+    }
+
+    console.log("Unsure: \n    r: "+r+"\n    g: "+g+"\n    b: "+b+"\n    ColorID: "+colorID);
+
+    if (colorID == correctColorID) {
+      crosshairBlock.style["border-color"] = "#00ff00";
+    } else {
+      crosshairBlock.style["border-color"] = "red";
+    }
   }
 
   function intToHex(int1) {
@@ -820,14 +877,18 @@ const { html, render } = mlp_uhtml;
 
   posParser.addEventListener("posChanged", () => {
     recalculateImagePos();
+
+    const imageData = ctx.getImageData(posParser.pos.x, posParser.pos.y, 1, 1);
+    const currentImageData = checkCtx.getImageData(posParser.pos.x, posParser.pos.y, 1, 1);
+
     if (settings.getSetting("autoColor").enabled) {
       try {
-        const imageData = ctx.getImageData(posParser.pos.x, posParser.pos.y, 1, 1);
         autoColorPick(imageData);
       } catch (e) {
         console.error(e);
       }
     }
+    checkIfColorRight(imageData, currentImageData);
   });
 
   const botCanvas = document.createElement("canvas");
@@ -875,8 +936,8 @@ const { html, render } = mlp_uhtml;
     console.error(`[${new Date().toISOString()}]`, ...arguments);
   }
 
-  const botTimeout = 3000;
-  const botAfterPlaceTimeout = 1500;
+  const botTimeout = 5000;
+  const botAfterPlaceTimeout = 3000;
   (async () => {
     while (true) {
       // Update the minimap image (necessary for checking the diff)
@@ -945,3 +1006,4 @@ const { html, render } = mlp_uhtml;
 })();
 
 // vim:et:sw=2
+
