@@ -56,7 +56,7 @@ const { html, render } = mlp_uhtml;
   // Move camera to center
   embed.camera.applyPosition({
     x: Math.floor(rPlaceCanvas.width / 2),
-    y: Math.floor(rPlaceCanvas.height / 2),
+    y: Math.floor(rPlaceCanvas.height / 2)
     zoom: 0,
   });
 
@@ -780,16 +780,7 @@ const { html, render } = mlp_uhtml;
 
   function autoColorPick(imageData) {
     if (imageData.data[3] !== 255) {
-      let diff = [];
-      for (const color of palette) {
-        diff.push(Math.abs(255 - color[0]) + Math.abs(255 - color[1]) + Math.abs(255 - color[2]));
-      }
-      let correctColorID = 0;
-      for (let i = 0; i < diff.length; i++) {
-        if (diff[correctColorID] > diff[i]) correctColorID = i;
-      }
-
-      embed.selectedColor = palette[correctColorID][3];
+      embed.selectedColor = undefined;
       return;
     }
 
