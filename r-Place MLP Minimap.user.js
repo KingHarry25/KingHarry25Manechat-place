@@ -56,7 +56,7 @@ const { html, render } = mlp_uhtml;
   // Move camera to center
   embed.camera.applyPosition({
     x: Math.floor(rPlaceCanvas.width / 2),
-    y: Math.floor(rPlaceCanvas.height / 2)
+    y: Math.floor(rPlaceCanvas.height / 2),
     zoom: 0,
   });
 
